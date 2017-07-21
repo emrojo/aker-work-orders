@@ -92,6 +92,8 @@ group :test, :development do
   gem 'database_cleaner'
 end
 
-gem 'simplecov', :require => false, :group => :test
-gem 'simplecov-rcov', :group => :test
-gem 'rubycritic', :group => :test
+group :test, :swaggercompile do
+  gem 'simplecov', :require => false
+  gem 'simplecov-rcov'
+  gem 'rubycritic'
+end
