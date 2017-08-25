@@ -41,14 +41,15 @@ Given(/^the following sets are defined for user "([^"]*)":$/) do |user, table|
       materials: materials,
       included: materials,        
       attributes: { 
-        name: myset['Name']  
+        name: myset['Name'],
+        created_at: Time.now  
       }
     }
     @sets_for_user[user].push(defined_set)
   end
   response_headers = {'Content-Type'=>'application/vnd.api+json'}
   
-  stub_request(:get, "http://external-server:3000/api/v1/sets?filter%5Bowner_id%5D=#{user}").
+  stub_request(:get, "http://external-server:3000/api/v1/sets?filter%5Bowner_id%5D=#{user}&sort=-created_at").
     with(headers: {'Accept'=>'application/vnd.api+json'}).
     to_return(status: 200, body: {data: @sets_for_user[user], size: @sets_for_user[user].size}.to_json, 
       headers: response_headers)
@@ -72,7 +73,7 @@ Given(/^the following sets are defined for user "([^"]*)":$/) do |user, table|
       to_return(status: 200, body: {data: defined_set }.to_json,  headers: response_headers)    
 
     stub_request(:patch, "http://external-server:3000/api/v1/sets/#{uuid}").
-      with(body: {data: {id: uuid, type: 'sets', attributes: { locked: true}}}.to_json,
+      with(body: {data: {id: uuid, type: 'sets', attributes: { locked: true, owner_id: "#{user}"}}}.to_json,
            headers: {'Accept'=>'application/vnd.api+json'}).
       to_return(status: 200, body: {data: defined_set }.to_json,  headers: response_headers)
 
@@ -83,7 +84,7 @@ Given(/^a set named "([^"]*)" of \d* elements is defined$/) do |set_name, size_s
   @uuid = SecureRandom.uuid
   @set_instance = { id: "#{@uuid}", meta: { size: size_set}, attributes: {name: set_name}}
   response_headers = {'Content-Type'=>'application/vnd.api+json'}
-  stub_request(:get, "http://external-server:3000/api/v1/sets?filter%5Bowner_id%5D=test@test").
+  stub_request(:get, "http://external-server:3000/api/v1/sets?filter%5Bowner_id%5D=test@test&sort=-created_at").
     with(headers: {'Accept'=>'application/vnd.api+json'}).
     to_return(status: 200, body: {data: [@set_instance], size: size_set}.to_json, 
       headers: response_headers)  
@@ -99,7 +100,7 @@ Given(/^a set named "([^"]*)" of \d* elements is defined$/) do |set_name, size_s
     to_return(status: 200, body: {data: @set_instance }.to_json,  headers: response_headers)    
 
   stub_request(:patch, "http://external-server:3000/api/v1/sets/#{@uuid}").
-    with(body: {data: {id: @uuid, type: 'sets', attributes: { locked: true}}}.to_json,
+    with(body: {data: {id: @uuid, type: 'sets', attributes: { locked: true, owner_id: 'test@test'}}}.to_json,
          headers: {'Accept'=>'application/vnd.api+json'}).
     to_return(status: 200, body: {data: @set_instance }.to_json,  headers: response_headers)    
 end
@@ -243,7 +244,9 @@ Given(/^I have a biomaterials service running$/) do
 end
 
 Given(/^I created a work order "([^"]*)"$/) do |arg1|
-    @work_order = FactoryGirl.create(:work_order)
+  user = User.find_by(email: 'test@test')
+  user = FactoryGirl.create(:user, email: 'test@test') if user.nil?
+  @work_order = FactoryGirl.create(:work_order, user: user)
 end
 
 Given(/^I process the work order "([^"]*)" with the LIMS/) do |arg1|
@@ -282,7 +285,7 @@ When(/^I prepare for a finish message$/) do
   set_double = double("set")
   allow(set_double).to receive(:id)
   allow(set_double).to receive(:set_materials)
-  allow(set_double).to receive(:update_attributes).with(locked: true)
+  allow(set_double).to receive(:update_attributes).with(locked: true, owner_id: 'test@test')
 
   allow(SetClient::Set).to receive(:create).and_return(set_double)
 end

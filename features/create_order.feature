@@ -83,7 +83,7 @@ Then I should see "Your work order has been created"
 
 And I should have published an event
 
-Scenario: Trying a create a work order without proposal execute permission
+Scenario: Trying to create a work order without proposal execute permission
 
 Given I already received the catalogue from LIMS "flimsy"
 Given the user "test@test" has permission "execute" for the proposal "Proposal 1"

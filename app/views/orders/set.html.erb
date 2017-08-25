@@ -23,9 +23,7 @@
         <td>
           <%= f.radio_button(:original_set_uuid, s.id) %>
         </td>
-        <td>
-          <%= s.name %>
-        </td>
+        <td><%= s.name %></td>
         <td>
           <%= pluralize(work_order.num_samples, "Sample") %>
         </td>
